@@ -1208,3 +1208,349 @@ But:
 That’s system design thinking.
 
 ---
+
+## Vertical Scaling vs Horizontal Scaling
+
+## 🔹 Summary of This Tutorial
+
+You have a service.
+
+It becomes popular.
+
+Millions of users start sending requests.
+
+Now your system must:
+
+* Handle high traffic
+* Stay fast (low latency)
+* Stay available (not crash)
+
+To increase system capacity, we use **Scaling**.
+
+There are two types:
+
+1. Vertical Scaling (Scale Up)
+2. Horizontal Scaling (Scale Out)
+
+Each has advantages and limitations.
+
+---
+
+## What is Scaling?
+
+Scaling = Increasing system capacity to handle more traffic and users.
+
+If:
+
+* 100 users → small server works
+* 1 million users → need bigger system
+
+---
+
+## 1️⃣ Vertical Scaling (Scale Up)
+
+Also called:
+
+* Scaling Up
+
+### What does it mean?
+
+You increase power of the same server.
+
+Example:
+
+* Add more CPU
+* Add more RAM
+* Add more storage
+
+---
+
+### Visual Idea
+
+Before:
+
+```
+[ Server ]
+```
+
+After:
+
+```
+[ Bigger Server with more CPU + RAM ]
+```
+
+---
+
+### Example in Real Terms
+
+Old server:
+
+* 2 CPU cores
+* 4GB RAM
+
+Upgrade to:
+
+* 16 CPU cores
+* 64GB RAM
+
+---
+
+### Why It’s Simple?
+
+Because:
+
+* No architecture changes
+* No load balancer
+* No distributed system complexity
+
+---
+
+### Basic Simulation Example (Node.js)
+
+If your app is slow due to CPU limits:
+
+```bash
+# Start Node with more memory
+node --max-old-space-size=4096 app.js
+```
+
+Or upgrade cloud instance:
+
+AWS:
+
+```
+t2.micro → t2.large
+```
+
+Simple upgrade.
+
+---
+
+### 🔥 Limitations of Vertical Scaling
+
+1. There is a hardware limit
+   You cannot add unlimited RAM or CPU.
+
+2. Single Point of Failure
+   If server crashes → entire system goes down.
+
+3. Expensive
+
+4. Not suitable for massive applications
+
+---
+
+## 2️⃣ Horizontal Scaling (Scale Out)
+
+Also called:
+
+* Scaling Out
+
+### What does it mean?
+
+Instead of upgrading one server,
+You add multiple servers.
+
+---
+
+### Visual Idea
+
+Before:
+
+```
+[ Server ]
+```
+
+After:
+
+```
+        Load Balancer
+              ↓
+   Server1   Server2   Server3
+```
+
+Now traffic is distributed.
+
+---
+
+## Why Horizontal Scaling is Powerful
+
+If:
+
+* 1 server handles 1000 requests/sec
+* 10 servers handle 10,000 requests/sec
+
+It scales with growth.
+
+---
+
+## Basic Horizontal Scaling Example (Node Cluster)
+
+Simulate multiple processes:
+
+```js
+const cluster = require('cluster');
+const os = require('os');
+const express = require('express');
+
+if (cluster.isMaster) {
+    const cpuCount = os.cpus().length;
+
+    for (let i = 0; i < cpuCount; i++) {
+        cluster.fork();
+    }
+} else {
+    const app = express();
+
+    app.get('/', (req, res) => {
+        res.send(`Handled by worker ${process.pid}`);
+    });
+
+    app.listen(3000);
+}
+```
+
+This runs multiple worker processes (horizontal style on same machine).
+
+---
+
+## Why We Need Load Balancer
+
+When multiple servers exist:
+
+We need something to distribute traffic.
+
+Example Concept:
+
+```js
+// pseudo example
+function loadBalancer(request) {
+    if (server1.isFree()) return server1;
+    else return server2;
+}
+```
+
+In real world:
+
+* Nginx
+* AWS ELB
+* HAProxy
+
+---
+
+## When to Use Vertical Scaling?
+
+Use when:
+
+* Traffic is low to medium
+* Startup stage
+* Simplicity is important
+* Budget limited
+* System is small
+
+---
+
+## When to Use Horizontal Scaling?
+
+Use when:
+
+* Millions of users
+* High traffic
+* High availability required
+* Cannot afford downtime
+* Enterprise-level system
+
+---
+
+## Very Important: Single Point of Failure
+
+In vertical scaling:
+
+```
+Only 1 server
+```
+
+If it crashes → full system down.
+
+In horizontal scaling:
+
+```
+Multiple servers
+```
+
+If one crashes → others handle traffic.
+
+That’s called **High Availability**.
+
+---
+
+## Real Interview Thinking
+
+Interviewer asks:
+
+“How would you scale your system?”
+
+Good Answer Structure:
+
+1. Start with vertical scaling for small traffic.
+2. Move to horizontal scaling for large traffic.
+3. Add load balancer.
+4. Add database replication.
+5. Add monitoring.
+
+---
+
+## Why Big Applications Use Horizontal Scaling?
+
+Because:
+
+* Unlimited scaling possible
+* Fault tolerance
+* No single server dependency
+* Better reliability
+
+Companies like:
+
+* Google
+* Amazon
+* Netflix
+* Instagram
+
+Use horizontal scaling heavily.
+
+---
+
+## 📌 Important Interview Pointers
+
+- Scaling = increasing capacity
+- Vertical scaling = upgrade same machine
+- Horizontal scaling = add more machines
+- Vertical scaling has hardware limits
+- Horizontal scaling removes single point of failure
+- Load balancer required for horizontal scaling
+- Large systems prefer horizontal scaling
+
+---
+
+## Comparison Summary
+
+| Feature      | Vertical              | Horizontal       |
+| ------------ | --------------------- | ---------------- |
+| Method       | Increase server power | Add more servers |
+| Complexity   | Simple                | Complex          |
+| Limit        | Hardware limit        | Almost unlimited |
+| Failure Risk | High                  | Low              |
+| Used For     | Small systems         | Large systems    |
+
+---
+
+## 🧠 Final System Design Mindset
+
+Small app → Vertical scaling
+Growing app → Horizontal scaling
+Large app → Distributed architecture
+
+Scaling is not about “making server bigger”.
+It is about designing system to grow safely.
+
+---
