@@ -1554,3 +1554,345 @@ Scaling is not about “making server bigger”.
 It is about designing system to grow safely.
 
 ---
+
+## Load Balancer ⚖️
+
+## 🔎 What This Tutorial Is Explaining (Summary)
+
+The video explains:
+
+1. ❌ Problem with users directly connecting to a single web server
+2. ❌ Issues when server goes down or traffic increases
+3. ✅ Solution: Use a Load Balancer
+4. ✅ Add multiple web servers (Horizontal Scaling)
+5. 🌐 Public IP vs Private IP concept
+6. ⚠️ Still a problem: Single database is a SPOF (Single Point of Failure)
+7. ➜ Need database scaling / replication (next logical step)
+
+---
+
+## 1️⃣ Problem: Users Directly Connected to Web Server
+
+### Architecture:
+
+```
+Users → Web Server → Database
+```
+
+### Problems:
+
+### 🔥 1. If server goes down
+
+* All users lose service.
+* Complete downtime.
+
+### 🚦 2. If too many users connect at same time
+
+* Server has limited CPU, RAM, connections.
+* It may:
+
+  * Respond slowly
+  * Crash
+  * Reject connections
+
+This is called:
+
+> **Single Point of Failure (SPOF)**
+
+---
+
+## 2️⃣ Solution: Load Balancer
+
+Instead of:
+
+```
+Users → Server
+```
+
+We do:
+
+```
+Users → Load Balancer → Multiple Web Servers
+```
+
+## What Load Balancer Does
+
+* Distributes incoming traffic
+* Prevents overloading a single server
+* Improves availability
+* Automatically routes traffic to healthy servers
+
+---
+
+# 3️⃣ Load Balancer Architecture
+
+```
+Users → (Public IP) → Load Balancer
+Load Balancer → (Private IPs) → Web Servers
+```
+
+## Important Concept: Public vs Private IP
+
+### 🌍 Public IP
+
+* Used by clients (browser/mobile app)
+* Accessible from internet
+
+### 🔒 Private IP
+
+* Used inside internal network
+* Not accessible from internet
+* Used for:
+
+  * Load balancer → servers
+  * Server → database communication
+
+---
+
+## 4️⃣ Horizontal Scaling
+
+Instead of increasing server size (vertical scaling), we:
+
+Add more servers.
+
+```
+Server 1
+Server 2
+Server 3
+```
+
+Load balancer distributes traffic among them.
+
+### Benefits:
+
+* High availability
+* Better performance
+* Easy scaling when traffic increases
+
+---
+
+## 5️⃣ Health Checks
+
+If one server goes down:
+
+Load balancer detects it and stops sending traffic to it.
+
+Example:
+
+```
+Server 1 ❌ (Down)
+Server 2 ✅
+Server 3 ✅
+```
+
+Traffic goes only to healthy servers.
+
+---
+
+## 6️⃣ But Still a Problem: Single Database
+
+Even if we scale web servers:
+
+```
+Users
+  ↓
+Load Balancer
+  ↓
+Web Servers
+  ↓
+Single Database ❌
+```
+
+If database goes down:
+
+* Entire system fails
+
+This is another **Single Point of Failure**.
+
+---
+
+## Now Let’s Explain Important Concepts with Basic Code Examples
+
+---
+
+## 🧠 1. Basic Web Server (Node.js Example)
+
+```javascript
+const express = require('express');
+const app = express();
+
+app.get('/', (req, res) => {
+  res.send("Hello from Server 1");
+});
+
+app.listen(3000, () => {
+  console.log("Server running on port 3000");
+});
+```
+
+This is a single server. If this crashes → service gone.
+
+---
+
+## 🧠 2. Multiple Servers (Simulating Horizontal Scaling)
+
+Server 1:
+
+```javascript
+app.listen(3001);
+```
+
+Server 2:
+
+```javascript
+app.listen(3002);
+```
+
+Now we have 2 servers running.
+
+---
+
+## 🧠 3. Simple Load Balancing (Round Robin Example in Node.js)
+
+Basic example using http-proxy:
+
+```javascript
+const http = require('http');
+const httpProxy = require('http-proxy');
+
+const proxy = httpProxy.createProxyServer();
+const servers = ['http://localhost:3001', 'http://localhost:3002'];
+
+let current = 0;
+
+http.createServer((req, res) => {
+    proxy.web(req, res, { target: servers[current] });
+    current = (current + 1) % servers.length;
+}).listen(8000);
+```
+
+Now:
+
+```
+Users → localhost:8000 → Distributed to 3001 & 3002
+```
+
+This is **Round Robin Load Balancing**.
+
+---
+
+## 🧠 4. Health Check Example
+
+A load balancer periodically checks:
+
+```javascript
+GET /health
+```
+
+Server:
+
+```javascript
+app.get('/health', (req, res) => {
+    res.status(200).send("OK");
+});
+```
+
+If health check fails → remove server from pool.
+
+---
+
+# 🧠 5. Database as Single Point of Failure
+
+Basic DB usage:
+
+```javascript
+const mongoose = require('mongoose');
+
+mongoose.connect('mongodb://localhost:27017/mydb');
+```
+
+If MongoDB crashes → all servers fail.
+
+---
+
+## 🧠 6. Database Replication Concept (High Level)
+
+Instead of:
+
+```
+1 Database
+```
+
+We use:
+
+```
+Primary DB
+Replica DB 1
+Replica DB 2
+```
+
+Write → Primary
+Read → Replicas
+
+Example concept (MongoDB replica set):
+
+```javascript
+mongodb://host1,host2,host3/?replicaSet=myReplicaSet
+```
+
+Now if one DB fails → system continues.
+
+---
+
+## Final Architecture (Better Version)
+
+```
+Users
+   ↓
+Load Balancer (Public IP)
+   ↓
+Web Server 1 (Private IP)
+Web Server 2 (Private IP)
+Web Server 3 (Private IP)
+   ↓
+Primary DB
+Replica DB
+```
+
+---
+
+## 📌 Important Concepts List
+
+* Single Point of Failure
+* Horizontal Scaling
+* Vertical Scaling
+* Load Balancer
+* Round Robin
+* Health Checks
+* Public IP
+* Private IP
+* High Availability
+* Database Replication
+
+---
+
+## 🏗 Real World Example
+
+When you open:
+
+* Amazon
+* Netflix
+* Instagram
+
+You are NEVER connecting to:
+
+* A single server
+* A single database
+
+There are:
+
+* Multiple load balancers
+* Hundreds of servers
+* Distributed databases
+
+---
