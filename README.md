@@ -848,3 +848,363 @@ You say:
 That’s strong system design thinking.
 
 ---
+
+## Which Database to use ?
+
+## 🔹 Summary of This Tutorial
+
+Previously:
+
+* We separated Application Server and Database Server.
+
+Now:
+
+* We must choose which type of database to use.
+
+There are two main types:
+
+1. Relational Database (SQL / RDBMS)
+2. Non-Relational Database (NoSQL)
+
+Key discussion points:
+
+* What is RDBMS?
+* What is NoSQL?
+* Differences
+* When to use which?
+* Interview perspective
+
+---
+
+## 🔥 1️⃣ Relational Database (RDBMS)
+
+Also called:
+
+* SQL Database
+* Relational Database Management System
+
+Examples:
+
+* MySQL
+* PostgreSQL
+* Oracle
+* SQL Server
+
+---
+
+## ✅ How Relational Database Works
+
+* Data stored in tables
+* Tables contain rows and columns
+* Fixed schema
+* Supports JOIN operations
+* Uses SQL language
+
+Example Table:
+
+### Users Table
+
+| id | name   | age |
+| -- | ------ | --- |
+| 1  | Armaan | 25  |
+
+### Orders Table
+
+| id | user_id | product |
+| -- | ------- | ------- |
+| 1  | 1       | Laptop  |
+
+---
+
+## 🔹 JOIN Operation (Very Important)
+
+You can combine tables:
+
+```sql
+SELECT users.name, orders.product
+FROM users
+JOIN orders ON users.id = orders.user_id;
+```
+
+This is powerful for relational data.
+
+---
+
+## 🔹 Basic SQL Example
+
+Create table:
+
+```sql
+CREATE TABLE users (
+  id INT PRIMARY KEY,
+  name VARCHAR(100),
+  age INT
+);
+```
+
+Insert:
+
+```sql
+INSERT INTO users VALUES (1, 'Armaan', 25);
+```
+
+Query:
+
+```sql
+SELECT * FROM users;
+```
+
+---
+
+## 🔹 When to Use Relational Database?
+
+Use RDBMS when:
+
+- Data is structured
+- Relationships are important
+- Strong consistency required
+- ACID properties needed
+- Financial / transactional systems
+
+Example:
+
+* Banking
+* E-commerce orders
+* Payment systems
+
+---
+
+## 2️⃣ Non-Relational Database (NoSQL)
+
+NoSQL = Not Only SQL
+
+Examples:
+
+* MongoDB (Document-based)
+* Redis (Key-value)
+* Cassandra (Column-based)
+* Neo4j (Graph-based)
+
+---
+
+## 🔹 Types of NoSQL Databases
+
+1. Key-Value Store (Redis)
+2. Document Store (MongoDB)
+3. Column Store (Cassandra)
+4. Graph Database (Neo4j)
+
+---
+
+## Document Database Example (MongoDB)
+
+Data stored as JSON-like documents.
+
+Example:
+
+```json
+{
+  "name": "Armaan",
+  "age": 25,
+  "orders": [
+    { "product": "Laptop", "price": 80000 }
+  ]
+}
+```
+
+No fixed schema required.
+
+---
+
+## 🔹 MongoDB Example (Node.js)
+
+Insert document:
+
+```js
+const { MongoClient } = require('mongodb');
+
+const client = new MongoClient('mongodb://localhost:27017');
+
+async function run() {
+    await client.connect();
+    const db = client.db('testDB');
+    const users = db.collection('users');
+
+    await users.insertOne({
+        name: "Armaan",
+        age: 25
+    });
+
+    console.log("User inserted");
+}
+
+run();
+```
+
+---
+
+## Major Differences: SQL vs NoSQL
+
+| Feature      | SQL                 | NoSQL                   |
+| ------------ | ------------------- | ----------------------- |
+| Schema       | Fixed               | Flexible                |
+| Structure    | Tables              | JSON / Key-value        |
+| JOIN Support | Yes                 | Usually No              |
+| Scaling      | Harder horizontally | Easier horizontally     |
+| Best For     | Structured data     | Large unstructured data |
+
+---
+
+## When Should You Use NoSQL?
+
+Use NoSQL when:
+
+- Data is unstructured
+- You don’t want fixed schema
+- High scalability needed
+- Very large data
+- Low latency requirement
+- Rapid development
+
+Example:
+
+* Social media
+* Real-time chat
+* Large analytics systems
+* Big data applications
+
+---
+
+## Why Big Systems Prefer NoSQL?
+
+Because:
+
+* Flexible schema
+* Easier horizontal scaling
+* Handles massive data
+* Good performance at scale
+
+Example:
+Instagram, Facebook, Netflix use NoSQL in parts of their systems.
+
+---
+
+## Important Interview Question
+
+Interviewer asks:
+
+"Which database will you choose and why?"
+
+Correct approach:
+
+You do NOT say randomly.
+
+You analyze:
+
+1. What type of data?
+2. Is it structured?
+3. Are relationships important?
+4. Is strict consistency needed?
+5. How much scale?
+6. Read-heavy or write-heavy?
+
+Then answer accordingly.
+
+---
+
+## Example Interview Answer
+
+If designing:
+
+## 🏦 Banking App
+
+“I will use PostgreSQL because strong consistency, ACID transactions and relationships are important.”
+
+---
+
+## 📱 Social Media App
+
+“I will use MongoDB or Cassandra because schema flexibility and horizontal scalability are important.”
+
+---
+
+## Real-World Example from Tutorial
+
+Large e-commerce platform:
+
+Each customer document may contain:
+
+* Name
+* Address
+* Order history
+* Payment info
+
+If millions of users → huge data → NoSQL preferred for scalability.
+
+---
+
+## ACID (Important for SQL)
+
+Relational databases support:
+
+* Atomicity
+* Consistency
+* Isolation
+* Durability
+
+Example (Transaction):
+
+```sql
+START TRANSACTION;
+UPDATE accounts SET balance = balance - 100 WHERE id = 1;
+UPDATE accounts SET balance = balance + 100 WHERE id = 2;
+COMMIT;
+```
+
+This ensures safe money transfer.
+
+---
+
+## Big Picture Architecture
+
+If building large system:
+
+```
+Users
+   ↓
+Load Balancer
+   ↓
+Application Servers
+   ↓
+Database (SQL or NoSQL)
+```
+
+Database choice depends on use case.
+
+---
+
+## 📌 Important Interview Pointers
+
+- RDBMS = structured + relations
+- NoSQL = flexible + scalable
+- SQL supports JOIN
+- NoSQL often avoids JOIN
+- SQL good for transactions
+- NoSQL good for massive unstructured data
+- Always choose database based on use case
+
+---
+
+## 🧠 Final Mindset Shift
+
+Good engineer asks:
+
+Not:
+“Which database is best?”
+
+But:
+“Which database fits this problem?”
+
+That’s system design thinking.
+
+---
