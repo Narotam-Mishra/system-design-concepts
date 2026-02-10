@@ -1896,3 +1896,388 @@ There are:
 * Distributed databases
 
 ---
+
+## Database Replication (07:29)
+
+Niceee 🔥 now we’re moving into proper production-level system design.
+
+This part of the tutorial is about **Database Replication (Master–Slave architecture)** — how to prevent database failure from taking down your entire system.
+
+Let’s break it cleanly and professionally.
+
+---
+
+# 🧾 Summary of This Tutorial
+
+After solving:
+
+✅ Traffic problem → using Load Balancer + multiple servers
+Now solving:
+❗ What if the **database goes down?**
+
+Solution introduced:
+
+> **Database Replication (Master–Slave Architecture)**
+
+Main ideas covered:
+
+1. Master DB handles **write operations**
+2. Slave DB(s) handle **read operations**
+3. Data from master is replicated to slaves
+4. Improves:
+
+   * Performance
+   * Reliability
+   * High Availability
+5. Failover handling:
+
+   * If slave fails → read from master
+   * If master fails → promote a slave to master
+
+---
+
+# 🔥 Problem: Single Database = Single Point of Failure
+
+Even after adding:
+
+```
+Users → Load Balancer → Multiple Web Servers → Single DB ❌
+```
+
+If DB crashes:
+
+* Entire system fails
+* No data access
+* No writes
+* No reads
+
+This is another **Single Point of Failure (SPOF)**.
+
+---
+
+# 💡 Solution: Database Replication
+
+We create copies of the database.
+
+## Architecture
+
+```
+              Web Servers
+                    ↓
+           ┌───────────────┐
+           │   Master DB   │  ← Handles Writes
+           └───────────────┘
+                    ↓ (Replication)
+        ┌───────────────────────┐
+        │   Slave DB 1          │ ← Handles Reads
+        │   Slave DB 2          │ ← Handles Reads
+        └───────────────────────┘
+```
+
+---
+
+# 📌 Important Concepts Explained
+
+---
+
+# 1️⃣ Master Database
+
+The master database handles:
+
+* INSERT
+* UPDATE
+* DELETE
+
+All modifying queries.
+
+Example (Node.js + MySQL):
+
+```javascript
+// Write connection (Master DB)
+const masterDb = mysql.createConnection({
+  host: 'master-db-host',
+  user: 'root',
+  password: 'password',
+  database: 'app_db'
+});
+
+// Write operation
+masterDb.query(
+  "INSERT INTO users (name, email) VALUES (?, ?)",
+  ["John", "john@example.com"]
+);
+```
+
+Only master handles writes.
+
+---
+
+# 2️⃣ Slave Database (Read Replica)
+
+Slave databases:
+
+* Do NOT handle writes
+* Only serve SELECT queries
+* Continuously sync data from master
+
+Example:
+
+```javascript
+// Read connection (Slave DB)
+const slaveDb = mysql.createConnection({
+  host: 'slave-db-host',
+  user: 'root',
+  password: 'password',
+  database: 'app_db'
+});
+
+// Read operation
+slaveDb.query(
+  "SELECT * FROM users WHERE id = ?",
+  [1],
+  (err, result) => {
+    console.log(result);
+  }
+);
+```
+
+---
+
+# 3️⃣ Replication Process
+
+Whenever something changes in master:
+
+```
+INSERT / UPDATE / DELETE
+```
+
+Master sends those changes to slaves.
+
+This happens:
+
+* Continuously
+* Automatically
+* In background
+
+Example (MongoDB Replica Set connection string):
+
+```javascript
+mongoose.connect(
+  "mongodb://db1,db2,db3/?replicaSet=myReplicaSet"
+);
+```
+
+Mongo handles replication internally.
+
+---
+
+## 4️⃣ Why More Slaves Than Master?
+
+In real applications:
+
+👉 Read operations >> Write operations
+
+Example:
+
+* Instagram
+* Amazon
+* YouTube
+
+Millions of:
+
+* Profile views
+* Product views
+* Feed loads
+
+But fewer:
+
+* Profile updates
+* Product edits
+
+So we scale read capacity by adding more slaves.
+
+---
+
+## 🚀 Advantages of Database Replication
+
+## ✅ 1. Better Performance
+
+Reads distributed across slaves:
+
+Instead of:
+
+```
+1 DB handling 10,000 reads/sec ❌
+```
+
+We get:
+
+```
+Slave1 → 3000 reads
+Slave2 → 3000 reads
+Slave3 → 4000 reads
+```
+
+Load divided → faster response time.
+
+---
+
+## ✅ 2. Reliability
+
+If one slave crashes:
+
+```
+Slave1 ❌
+Slave2 ✅
+Slave3 ✅
+```
+
+System still works.
+
+---
+
+## ✅ 3. High Availability
+
+If master fails:
+
+We can:
+
+👉 Promote a slave to become new master.
+
+This is called:
+
+> **Failover**
+
+---
+
+## 🔄 Failover Scenario
+
+## Case 1: Slave goes down
+
+Solution:
+
+* Redirect reads to master temporarily
+* Add a new slave
+
+---
+
+## Case 2: Master goes down
+
+Steps:
+
+1. Pick a slave
+2. Promote it to master
+3. Reconfigure replication
+4. Add a new slave later
+
+⚠️ In real production systems this is complex:
+
+* Risk of data inconsistency
+* Split brain issues
+* Partial writes
+* Recovery scripts needed
+
+Tools that handle this:
+
+* MongoDB Replica Set
+* MySQL Group Replication
+* AWS RDS Multi-AZ
+* Kubernetes operators
+
+---
+
+## 🏗 Final Improved Architecture
+
+```
+Users
+   ↓
+Load Balancer (Public IP)
+   ↓
+Web Server 1
+Web Server 2
+Web Server 3
+   ↓
+Master DB (Write)
+   ↓
+Slave DB 1 (Read)
+Slave DB 2 (Read)
+Slave DB 3 (Read)
+```
+
+Now we solved:
+
+✅ Traffic scaling
+✅ Web server failures
+✅ Database failure risk
+✅ Read performance bottleneck
+
+---
+
+# 📊 Key Interview Concepts From This Topic
+
+Make sure you remember these terms:
+
+* Database Replication
+* Master–Slave Architecture
+* Read Replica
+* Write Operations
+* Read Operations
+* Failover
+* High Availability
+* Data Consistency
+* Replication Lag
+* Single Point of Failure
+
+---
+
+## ⚠️ Important Real-World Problem: Replication Lag
+
+Replication is not always instant.
+
+If:
+
+1. User updates profile (write to master)
+2. Immediately reads profile
+3. Read hits slave
+4. Slave hasn’t updated yet
+
+User sees old data.
+
+Solution strategies:
+
+* Read-after-write consistency (read from master)
+* Sticky sessions
+* Semi-synchronous replication
+
+---
+
+## 🎯 Big Picture
+
+Before:
+
+```
+Single Server + Single DB = Fragile System
+```
+
+Now:
+
+```
+Load Balancer + Multiple Servers + Replicated DB = Production-ready architecture
+```
+
+---
+
+## 👀 What Comes Next?
+
+At the end, tutorial hints at:
+
+> How to further improve response time?
+
+Next logical topic:
+
+🔥 Caching (Redis, Memcached)
+🔥 CDN
+🔥 Query optimization
+🔥 Indexing
+
+---
