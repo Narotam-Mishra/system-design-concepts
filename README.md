@@ -2275,9 +2275,388 @@ At the end, tutorial hints at:
 
 Next logical topic:
 
-🔥 Caching (Redis, Memcached)
-🔥 CDN
-🔥 Query optimization
-🔥 Indexing
+* Caching (Redis, Memcached)
+* CDN
+* Query optimization
+* Indexing
+
+---
+
+Caching (7:12)
+
+## 🧾 Summary of This Tutorial
+
+So far we already fixed:
+
+✅ Traffic problem → Load Balancer + Multiple Web Servers
+✅ Database failure problem → Master–Slave Replication
+
+Now question:
+
+> Can we improve response time even more?
+
+Answer: **YES — Using Cache**
+
+Main ideas covered:
+
+1. What is caching?
+2. Why caching improves performance
+3. Read-through caching pattern
+4. When to use cache
+5. Cache expiration policy
+6. Cache consistency
+7. Multiple cache servers (avoid SPOF)
+8. Cache eviction policies (LRU, LFU, FIFO)
+
+---
+
+## 🚀 What is Cache?
+
+Cache = Temporary high-speed storage.
+
+It stores:
+
+* Results of expensive database queries
+* Frequently accessed data
+
+Instead of hitting database every time, we serve data from cache.
+
+---
+
+## 🏗 Architecture with Cache
+
+Before:
+
+```
+Web Server → Database
+```
+
+After:
+
+```
+Web Server → Cache → Database
+```
+
+Flow:
+
+1. Check cache first
+2. If found → return immediately
+3. If not found → fetch from DB
+4. Store in cache
+5. Return response
+
+---
+
+## Why Cache is Important
+
+Without cache:
+
+* Every request hits database
+* DB becomes overloaded
+* Slower response time
+
+With cache:
+
+* Faster responses
+* Less DB load
+* Better scalability
+
+---
+
+## 📌 What Does Cache Store?
+
+1. Results of expensive queries
+2. Frequently accessed data
+
+Example:
+
+* User profile
+* Product details
+* Homepage feed
+* Config settings
+
+---
+
+## 🧠 Read-Through Cache Pattern
+
+This tutorial explains:
+
+> Read-Through Caching
+
+### Process:
+
+1. Web server checks cache
+2. If data exists → return
+3. If not → read from DB
+4. Store in cache
+5. Return to user
+
+---
+
+## 💻 Basic Code Example (Node.js + Redis)
+
+Install Redis client:
+
+```bash
+npm install redis
+```
+
+### Setup Redis
+
+```javascript
+const redis = require("redis");
+const client = redis.createClient();
+
+client.connect();
+```
+
+---
+
+### Read-Through Cache Example
+
+```javascript
+async function getUser(userId) {
+  const cacheKey = `user:${userId}`;
+
+  // 1. Check cache
+  let cachedUser = await client.get(cacheKey);
+
+  if (cachedUser) {
+    console.log("Cache hit");
+    return JSON.parse(cachedUser);
+  }
+
+  console.log("Cache miss");
+
+  // 2. Fetch from database
+  const user = await database.getUserById(userId);
+
+  // 3. Store in cache (with expiration)
+  await client.set(cacheKey, JSON.stringify(user), {
+    EX: 60 // expire in 60 seconds
+  });
+
+  return user;
+}
+```
+
+---
+
+## ⏳ TTL (Time To Live) / Expiration
+
+Cache should not live forever.
+
+Too short:
+
+* Cache expires quickly
+* DB still overloaded
+
+Too long:
+
+* Data becomes stale (outdated)
+
+Example:
+
+```javascript
+await client.set("key", "value", {
+  EX: 300  // expire after 5 minutes
+});
+```
+
+---
+
+## 🧠 When Should You Use Cache?
+
+Use cache when:
+
+✅ Data is read frequently
+✅ Data changes rarely
+✅ DB queries are expensive
+
+Example:
+
+* Product catalog
+* Public profiles
+* Blog posts
+
+Avoid cache when:
+❌ Data updates constantly
+❌ Strong consistency required
+
+---
+
+# 🔄 Cache Consistency Problem
+
+Problem:
+
+1. Data updated in DB
+2. Cache still has old value
+
+User sees stale data.
+
+Solution options:
+
+1. Delete cache after DB update
+2. Update cache after DB update
+3. Short TTL
+
+Example (Invalidate cache after update):
+
+```javascript
+async function updateUser(userId, newData) {
+  await database.updateUser(userId, newData);
+
+  // Delete cached value
+  await client.del(`user:${userId}`);
+}
+```
+
+---
+
+## 🚨 Avoid Single Point of Failure (SPOF)
+
+If you use only:
+
+```
+1 Cache Server
+```
+
+And it crashes → entire system slows down.
+
+Solution:
+
+Use multiple cache servers.
+
+```
+Web Servers
+     ↓
+  Cache Cluster
+     ↓
+ Database
+```
+
+Tools:
+
+* Redis Cluster
+* Memcached cluster
+
+---
+
+## 🗑 Cache Eviction Policies
+
+When cache memory is full, we must remove old entries.
+
+Common eviction policies:
+
+---
+
+## 1️⃣ LRU (Least Recently Used)
+
+Remove data not used recently.
+
+Most popular in real systems.
+
+---
+
+## 2️⃣ LFU (Least Frequently Used)
+
+Remove data used least number of times.
+
+---
+
+## 3️⃣ FIFO (First In First Out)
+
+Remove oldest inserted data.
+
+---
+
+Example Redis config:
+
+```bash
+maxmemory-policy allkeys-lru
+```
+
+---
+
+## ⚡ Final Architecture Now
+
+```
+Users
+   ↓
+Load Balancer
+   ↓
+Multiple Web Servers
+   ↓
+Cache (Redis Cluster)
+   ↓
+Master DB (Write)
+   ↓
+Slave DBs (Read)
+```
+
+Now system is:
+
+✅ Fast
+✅ Scalable
+✅ Fault tolerant
+✅ High availability
+✅ Optimized for reads
+
+---
+
+## 🎯 Key Interview Terms From This Topic
+
+Make sure you remember:
+
+* Caching
+* Read-through cache
+* Cache hit
+* Cache miss
+* TTL (Time to Live)
+* Cache invalidation
+* Eviction policy (LRU, LFU, FIFO)
+* Cache consistency
+* Cache cluster
+* Single Point of Failure
+
+---
+
+## 🧠 Why Big Companies Use Cache
+
+Instagram, Amazon, Netflix:
+
+* Millions of reads per second
+* Impossible to serve all from database
+* Redis & Memcached heavily used
+
+---
+
+## 📊 Performance Comparison
+
+Without cache:
+
+```
+Response time = DB query time (slow)
+```
+
+With cache:
+
+```
+Response time = Memory lookup time (very fast)
+```
+
+Memory access is thousands of times faster than disk.
+
+---
+
+## Big Picture Progression
+
+1️⃣ Single server
+2️⃣ Horizontal scaling
+3️⃣ Load balancer
+4️⃣ DB replication
+5️⃣ Cache layer
+
+Now you're building real production architecture knowledge 🚀
 
 ---
