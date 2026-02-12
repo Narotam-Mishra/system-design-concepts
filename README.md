@@ -160,7 +160,7 @@ With system design thinking:
 * Is N+1 query happening?
 * Should I use CDN?
 
-See the difference? 🔥
+See the difference? 
 
 ---
 
@@ -876,7 +876,7 @@ Key discussion points:
 
 ---
 
-## 🔥 1️⃣ Relational Database (RDBMS)
+## 1️⃣ Relational Database (RDBMS)
 
 Also called:
 
@@ -1326,7 +1326,7 @@ Simple upgrade.
 
 ---
 
-### 🔥 Limitations of Vertical Scaling
+### Limitations of Vertical Scaling
 
 1. There is a hardware limit
    You cannot add unlimited RAM or CPU.
@@ -1581,7 +1581,7 @@ Users → Web Server → Database
 
 ### Problems:
 
-### 🔥 1. If server goes down
+### 1. If server goes down
 
 * All users lose service.
 * Complete downtime.
@@ -1899,7 +1899,7 @@ There are:
 
 ## Database Replication (07:29)
 
-Niceee 🔥 now we’re moving into proper production-level system design.
+Niceee now we’re moving into proper production-level system design.
 
 This part of the tutorial is about **Database Replication (Master–Slave architecture)** — how to prevent database failure from taking down your entire system.
 
@@ -1936,7 +1936,7 @@ Main ideas covered:
 
 ---
 
-# 🔥 Problem: Single Database = Single Point of Failure
+## Problem: Single Database = Single Point of Failure
 
 Even after adding:
 
@@ -2282,7 +2282,7 @@ Next logical topic:
 
 ---
 
-Caching (7:12)
+## Caching (7:12)
 
 ## 🧾 Summary of This Tutorial
 
@@ -2485,7 +2485,7 @@ Avoid cache when:
 
 ---
 
-# 🔄 Cache Consistency Problem
+## 🔄 Cache Consistency Problem
 
 Problem:
 
@@ -2658,5 +2658,397 @@ Memory access is thousands of times faster than disk.
 5️⃣ Cache layer
 
 Now you're building real production architecture knowledge 🚀
+
+---
+
+## CDN (Content Delivery Network) (07:56)
+
+## 📌 1. What This Tutorial Covers
+
+The video explains:
+
+1. Static vs Dynamic content
+2. What is CDN
+3. How CDN works
+4. CDN request flow
+5. Cost considerations
+6. Expiration time (TTL)
+7. CDN fallback strategy
+8. File invalidation & versioning
+9. Final system architecture after adding CDN
+
+---
+
+## 📌 2. Static vs Dynamic Content
+
+Understanding this is very important.
+
+## 🔹 Static Content
+
+Content that does NOT change frequently.
+
+Examples:
+
+* Images
+* Videos
+* CSS files
+* JavaScript files
+* Public documents
+* Book cover images
+
+These are ideal for CDN.
+
+---
+
+## 🔹 Dynamic Content
+
+Content that changes based on user or request.
+
+Examples:
+
+* User dashboard
+* Personalized feed
+* Cart items
+* Account balance
+* Search results
+
+These are usually served by web servers.
+
+---
+
+## 📌 3. What is CDN?
+
+CDN = **Content Delivery Network**
+
+It is a network of distributed servers across different geographic locations.
+
+Its job:
+
+> Store and deliver static content from the nearest server to the user.
+
+---
+
+## 📌 4. Why CDN is Important
+
+Distance matters.
+
+If your server is in the US:
+
+* US user → Fast response
+* India user → Slow response
+
+CDN solves this by placing servers globally.
+
+So:
+
+* User gets content from nearest location
+* Lower latency
+* Faster load time
+* Reduced load on web server
+
+---
+
+## 📌 5. How CDN Works (Step-by-Step Flow)
+
+Let’s say a user requests an image:
+
+### Step 1:
+
+User → CDN
+
+### Step 2:
+
+If CDN has image → return immediately (CDN hit)
+
+### Step 3:
+
+If CDN does NOT have image:
+
+* CDN requests it from Web Server
+* Web Server sends image
+* CDN stores it temporarily
+* CDN sends it to user
+
+Next time:
+
+* Directly served from CDN
+
+---
+
+## 📌 6. Simple Architecture With CDN
+
+```
+User
+   ↓
+DNS
+   ↓
+Load Balancer
+   ↓
+Web Server
+   ↓
+Database
+```
+
+After adding CDN:
+
+```
+User
+   ↓
+CDN (Static Content)
+   ↓
+Load Balancer
+   ↓
+Web Server (Dynamic Content)
+   ↓
+Database
+```
+
+---
+
+## 📌 7. Basic Example (Node.js Static File + CDN)
+
+Suppose your app serves images.
+
+### Normal Static Serving:
+
+```javascript
+const express = require("express");
+const app = express();
+
+app.use("/static", express.static("public"));
+
+app.listen(3000, () => {
+  console.log("Server running");
+});
+```
+
+Now instead of:
+
+```
+https://myapp.com/static/logo.png
+```
+
+You configure CDN like:
+
+```
+https://cdn.myapp.com/logo.png
+```
+
+CDN will:
+
+* Fetch from origin server
+* Cache it
+* Serve globally
+
+---
+
+## 📌 8. CDN Expiration (TTL)
+
+Just like cache, CDN content should expire.
+
+If TTL too short:
+
+* CDN keeps fetching from server
+* Server load increases
+
+If TTL too long:
+
+* Stale content problem
+
+Example HTTP header:
+
+```javascript
+app.use((req, res, next) => {
+  res.set("Cache-Control", "public, max-age=3600");
+  next();
+});
+```
+
+Meaning:
+
+* Cache for 1 hour
+
+---
+
+## 📌 9. CDN Cost Consideration
+
+CDN providers charge based on:
+
+* Data transfer
+* Requests count
+* Geographic region
+
+So:
+
+❌ Do NOT store rarely used content
+✅ Store frequently accessed static content
+
+Examples of CDN providers:
+
+* Cloudflare
+* AWS CloudFront
+* Akamai
+* Fastly
+
+---
+
+## 📌 10. CDN Fallback Strategy
+
+What if CDN goes down?
+
+System must:
+
+* Automatically fallback to origin server
+
+Meaning:
+
+```
+If CDN fails → Web Server serves content directly
+```
+
+Always design fallback.
+
+---
+
+## 📌 11. File Invalidation
+
+Problem:
+
+You updated an image.
+
+But CDN still has old version.
+
+Solutions:
+
+---
+
+## 🔹 1. Manual Invalidation
+
+Most CDN providers allow:
+
+* Purge cache
+* Invalidate specific file
+
+Example:
+
+```
+Purge: /images/logo.png
+```
+
+---
+
+## 🔹 2. File Versioning (Best Practice)
+
+Instead of:
+
+```
+logo.png
+```
+
+Use:
+
+```
+logo_v2.png
+```
+
+OR
+
+```
+logo.png?v=2
+```
+
+Now CDN treats it as new file.
+
+Example:
+
+```html
+<img src="https://cdn.myapp.com/logo.png?v=2" />
+```
+
+This forces CDN to fetch new version.
+
+---
+
+## 📌 12. Full Final Architecture After All Improvements
+
+Now system becomes:
+
+```
+Users
+   ↓
+DNS
+   ↓
+CDN (Static)
+   ↓
+Load Balancer
+   ↓
+Multiple Web Servers (Dynamic)
+   ↓
+Cache (Redis)
+   ↓
+Master DB (Writes)
+   ↓
+Slave DBs (Reads)
+```
+
+---
+
+## 📌 13. What We Improved Step-by-Step
+
+| Layer            | Purpose                         |
+| ---------------- | ------------------------------- |
+| Load Balancer    | Traffic distribution            |
+| Multiple Servers | Horizontal scaling              |
+| DB Replication   | Read scaling                    |
+| Cache            | Faster DB reads                 |
+| CDN              | Faster static delivery globally |
+
+---
+
+## 📌 14. Interview Important Terms
+
+Make sure you remember:
+
+* Static content
+* Dynamic content
+* CDN
+* Edge server
+* Origin server
+* Latency
+* TTL
+* CDN hit / miss
+* Invalidation
+* Versioning
+* Fallback strategy
+* Geo-distributed network
+
+---
+
+## 📌 15. Why Big Companies Use CDN
+
+Netflix, Amazon, Instagram use CDN because:
+
+* Millions of global users
+* Need low latency worldwide
+* Cannot serve static content from single data center
+
+CDN reduces:
+
+* Server load
+* Bandwidth cost
+* Latency
+
+---
+
+## 📌 16. Final Big Picture (System Design Growth)
+
+1️⃣ Single server
+2️⃣ Horizontal scaling
+3️⃣ Load balancer
+4️⃣ DB replication
+5️⃣ Cache layer
+6️⃣ CDN layer
+
+Now you are designing production-level scalable systems 🚀
 
 ---
