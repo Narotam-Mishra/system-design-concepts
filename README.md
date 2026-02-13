@@ -3052,3 +3052,375 @@ CDN reduces:
 Now you are designing production-level scalable systems 🚀
 
 ---
+
+## Stateful & Stateless Architecture (08:48)
+
+## 1. What This Tutorial Explains
+
+The tutorial explains:
+
+* What is **Session / State Data**
+* What is **Stateful Architecture**
+* What is **Stateless Architecture**
+* Problems with Stateful servers
+* Why Stateless architecture is better for scaling
+* How to store session data separately
+* How this improves auto-scaling and reliability
+* Final production-ready architecture
+
+---
+
+## 🧠 2. What is Session / State Data?
+
+Session data = data that represents a user’s interaction state.
+
+Examples:
+
+* User logged in or not
+* User profile image
+* Login time
+* Cart items
+* Authentication token
+* User preferences
+
+This is called **state** because it represents the current condition of the user.
+
+---
+
+## 🟥 3. What is Stateful Architecture?
+
+In a stateful system:
+
+> Each web server stores user session data inside itself.
+
+## Example Diagram
+
+```
+User A → Server 1 (stores A’s session)
+User B → Server 2 (stores B’s session)
+User C → Server 3 (stores C’s session)
+```
+
+Now the problem:
+
+If User A’s next request goes to Server 2:
+
+❌ Server 2 does NOT have A’s session
+❌ It thinks user is unauthenticated
+❌ System breaks
+
+---
+
+## 🚨 Problems with Stateful Architecture
+
+1. 🔹 Scaling is hard
+2. 🔹 Load balancing becomes tricky
+3. 🔹 If server crashes → user session lost
+4. 🔹 Removing a server is difficult
+5. 🔹 Auto-scaling is difficult
+
+You need something called **Sticky Sessions**.
+
+---
+
+## What is Sticky Session?
+
+Load balancer forces:
+
+> Same user → Same server always
+
+But that creates dependency and scaling problems.
+
+---
+
+## 4. What is Stateless Architecture?
+
+In stateless architecture:
+
+> Web servers do NOT store session data.
+
+Instead:
+
+Session data is stored in a separate shared storage.
+
+Example:
+
+* Redis
+* Database
+* Distributed cache
+
+---
+
+## Diagram
+
+```
+Users
+   ↓
+Load Balancer
+   ↓
+Web Servers (No session storage)
+   ↓
+Shared Session Store (Redis / DB)
+```
+
+Now:
+
+Any request can go to ANY server.
+
+Server fetches session data from shared store.
+
+Problem solved 🎉
+
+---
+
+## 5. Why Stateless Architecture is Better?
+
+Because:
+
+✔ Easy horizontal scaling
+✔ Easy auto-scaling
+✔ Server failure safe
+✔ Load balancing simple
+✔ No sticky session required
+✔ Better cloud-native design
+
+---
+
+## 6. Full Architecture Progression (As Explained in Tutorial)
+
+You started with:
+
+1️⃣ Single Server
+2️⃣ Multiple Servers
+3️⃣ Load Balancer
+4️⃣ Master-Slave DB
+5️⃣ Cache
+6️⃣ CDN
+7️⃣ Stateless Architecture
+
+Now your system is production-level scalable.
+
+---
+
+## 🔎 7. Important Concepts Explained with Code
+
+---
+
+## Concept 1: Stateful Example (Bad Practice)
+
+```javascript
+const express = require("express");
+const session = require("express-session");
+
+const app = express();
+
+app.use(session({
+    secret: "mysecret",
+    resave: false,
+    saveUninitialized: true
+}));
+
+app.get("/login", (req, res) => {
+    req.session.user = "John";
+    res.send("Logged in");
+});
+
+app.get("/profile", (req, res) => {
+    if (!req.session.user) {
+        return res.send("Not authenticated");
+    }
+    res.send("Welcome " + req.session.user);
+});
+
+app.listen(3000);
+```
+
+⚠ Problem:
+Session stored in server memory.
+
+If:
+
+* Server crashes
+* Another server handles request
+
+Session lost.
+
+---
+
+## Concept 2: Stateless Using Redis (Better)
+
+Now store session in shared Redis.
+
+```javascript
+const express = require("express");
+const session = require("express-session");
+const RedisStore = require("connect-redis").default;
+const { createClient } = require("redis");
+
+const redisClient = createClient();
+redisClient.connect();
+
+const app = express();
+
+app.use(session({
+    store: new RedisStore({ client: redisClient }),
+    secret: "mysecret",
+    resave: false,
+    saveUninitialized: false
+}));
+
+app.get("/login", (req, res) => {
+    req.session.user = "John";
+    res.send("Logged in");
+});
+
+app.get("/profile", (req, res) => {
+    if (!req.session.user) {
+        return res.send("Not authenticated");
+    }
+    res.send("Welcome " + req.session.user);
+});
+
+app.listen(3000);
+```
+
+Now:
+
+✔ Session stored in Redis
+✔ Any server can access it
+✔ No sticky session needed
+✔ Easy scaling
+
+---
+
+## Concept 3: Token-Based Stateless (Even Better)
+
+Modern systems use JWT.
+
+Instead of storing session:
+
+Store user info inside token.
+
+```javascript
+const jwt = require("jsonwebtoken");
+
+app.post("/login", (req, res) => {
+    const token = jwt.sign(
+        { user: "John" },
+        "secretkey",
+        { expiresIn: "1h" }
+    );
+    res.json({ token });
+});
+
+app.get("/profile", (req, res) => {
+    const token = req.headers.authorization;
+    try {
+        const decoded = jwt.verify(token, "secretkey");
+        res.send("Welcome " + decoded.user);
+    } catch {
+        res.send("Unauthorized");
+    }
+});
+```
+
+Now:
+
+✔ No session storage needed
+✔ Fully stateless
+✔ Best for microservices
+
+---
+
+## 8. How Auto Scaling Becomes Easy
+
+Before (Stateful):
+
+```
+Remove Server 1?
+❌ User sessions lost
+❌ Migration required
+```
+
+After (Stateless):
+
+```
+Remove Server 1?
+✔ No problem
+✔ Sessions in Redis
+✔ Load balancer redirects automatically
+```
+
+Cloud auto-scaling works smoothly now.
+
+---
+
+## 9. Final Strong Architecture
+
+```
+Users
+   ↓
+DNS
+   ↓
+CDN (Static Content)
+   ↓
+Load Balancer
+   ↓
+Multiple Stateless Web Servers
+   ↓
+Redis (Session Store)
+   ↓
+Cache Layer
+   ↓
+Master DB (Writes)
+   ↓
+Slave DB (Reads)
+```
+
+Now system supports:
+
+✔ High traffic
+✔ Auto scaling
+✔ Server failures
+✔ Global delivery
+✔ Fast responses
+
+---
+
+## 📌 10. Interview Important Keywords
+
+Make sure you remember:
+
+* Stateful Architecture
+* Stateless Architecture
+* Session Data
+* Sticky Session
+* Shared Session Store
+* Redis
+* JWT
+* Horizontal Scaling
+* Auto Scaling
+* Load Balancer
+* Failover
+* High Availability
+
+---
+
+## 🎯 Final Big Idea of This Tutorial
+
+The biggest learning:
+
+> Move session/state data OUT of web servers.
+
+Because:
+
+Web servers should be:
+
+* Replaceable
+* Disposable
+* Scalable
+* Independent
+
+That’s modern cloud architecture mindset.
+
+---
