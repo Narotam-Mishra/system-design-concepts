@@ -1624,7 +1624,7 @@ Users → Load Balancer → Multiple Web Servers
 
 ---
 
-# 3️⃣ Load Balancer Architecture
+## 3️⃣ Load Balancer Architecture
 
 ```
 Users → (Public IP) → Load Balancer
@@ -1899,15 +1899,9 @@ There are:
 
 ## Database Replication (07:29)
 
-Niceee now we’re moving into proper production-level system design.
-
-This part of the tutorial is about **Database Replication (Master–Slave architecture)** — how to prevent database failure from taking down your entire system.
-
-Let’s break it cleanly and professionally.
-
 ---
 
-# 🧾 Summary of This Tutorial
+## 🧾 Summary of This Tutorial
 
 After solving:
 
@@ -1955,7 +1949,7 @@ This is another **Single Point of Failure (SPOF)**.
 
 ---
 
-# 💡 Solution: Database Replication
+## 💡 Solution: Database Replication
 
 We create copies of the database.
 
@@ -1976,11 +1970,11 @@ We create copies of the database.
 
 ---
 
-# 📌 Important Concepts Explained
+## 📌 Important Concepts Explained
 
 ---
 
-# 1️⃣ Master Database
+## 1️⃣ Master Database
 
 The master database handles:
 
@@ -2012,7 +2006,7 @@ Only master handles writes.
 
 ---
 
-# 2️⃣ Slave Database (Read Replica)
+## 2️⃣ Slave Database (Read Replica)
 
 Slave databases:
 
@@ -2043,7 +2037,7 @@ slaveDb.query(
 
 ---
 
-# 3️⃣ Replication Process
+## 3️⃣ Replication Process
 
 Whenever something changes in master:
 
@@ -2213,7 +2207,7 @@ Now we solved:
 
 ---
 
-# 📊 Key Interview Concepts From This Topic
+## 📊 Key Interview Concepts From This Topic
 
 Make sure you remember these terms:
 
@@ -3762,5 +3756,372 @@ You must design for:
 Single data center = risky.
 
 Multiple data centers + Geo DNS + Replication = enterprise-grade system.
+
+---
+
+## Message Queue (08:38)
+
+## 🔥 1️⃣ What Problem Does Message Queue Solve?
+
+Modern applications are built using:
+
+> **Microservices Architecture**
+
+Instead of one big monolithic system, we break the system into:
+
+* Small independent services
+* Each service can be developed independently
+* Deployed independently
+* Scaled independently
+
+Example:
+
+* User Service
+* Order Service
+* Payment Service
+* Email Service
+* Photo Processing Service
+
+But now the big question:
+
+👉 How do these services communicate?
+
+Answer:
+
+## 👉 Message Queue
+
+---
+
+## 🔥 2️⃣ What is a Message Queue?
+
+A Message Queue is a system that:
+
+* Allows services to send messages
+* Stores messages temporarily
+* Allows other services to consume them later
+
+It enables:
+
+> Asynchronous Communication
+
+---
+
+## 🔥 3️⃣ Basic Architecture of Message Queue
+
+```
+Producer  →  Message Queue  →  Consumer
+```
+
+### Producer
+
+Sends messages (also called Publisher)
+
+### Message Queue
+
+Stores messages
+
+### Consumer
+
+Reads messages (also called Subscriber)
+
+---
+
+## 🔥 4️⃣ Why Message Queue is Needed?
+
+Without MQ:
+
+Service A directly calls Service B
+
+```
+A → B
+```
+
+Problems:
+
+* Tight coupling
+* If B is down → A fails
+* Cannot scale independently
+* Synchronous blocking
+
+With MQ:
+
+```
+A → Queue → B
+```
+
+Now:
+
+* A and B are independent
+* A doesn't wait for B
+* System becomes scalable
+* System becomes reliable
+
+---
+
+## 🔥 5️⃣ Key Concept: Asynchronous Communication
+
+Asynchronous means:
+
+* Producer does NOT wait for consumer.
+* Producer sends message and becomes free.
+
+Consumer processes when available.
+
+---
+
+## 💻 Basic Example Without Message Queue (Synchronous)
+
+```javascript
+// Producer directly calling consumer
+
+function processPhoto(photo) {
+    // takes 5 seconds
+    console.log("Processing photo...");
+}
+
+function uploadPhoto(photo) {
+    processPhoto(photo);  // blocking call
+    console.log("Upload complete");
+}
+
+uploadPhoto("photo1");
+```
+
+Problem:
+User waits until processing completes.
+
+---
+
+## 💻 With Message Queue (Asynchronous)
+
+```javascript
+let messageQueue = [];
+
+function producer(photo) {
+    messageQueue.push(photo);
+    console.log("Photo added to queue");
+}
+
+function consumer() {
+    while (messageQueue.length > 0) {
+        let photo = messageQueue.shift();
+        console.log("Processing:", photo);
+    }
+}
+
+producer("photo1");
+producer("photo2");
+
+consumer();
+```
+
+Producer becomes free immediately.
+
+---
+
+## 🔥 6️⃣ Important Properties of Message Queue
+
+### 1️⃣ Producer & Consumer are Independent
+
+Producer does not depend on consumer availability.
+
+Consumer can process later.
+
+---
+
+### 2️⃣ Scalability
+
+If load increases:
+
+Increase consumers.
+
+If load decreases:
+
+Reduce consumers.
+
+---
+
+### 💻 Scaling Example
+
+```javascript
+function consumer(id) {
+    setInterval(() => {
+        if (messageQueue.length > 0) {
+            let task = messageQueue.shift();
+            console.log(`Worker ${id} processing ${task}`);
+        }
+    }, 1000);
+}
+
+// Start 3 consumers
+consumer(1);
+consumer(2);
+consumer(3);
+```
+
+Now processing happens faster.
+
+---
+
+## 🔥 7️⃣ Real Example from Tutorial: Photo Processing
+
+Scenario:
+
+* User uploads 100 photos.
+* Photo customization takes time.
+
+Without MQ:
+User waits long time.
+
+With MQ:
+
+1. Producer adds tasks to queue.
+2. Consumers process photos one by one.
+3. Producer is free immediately.
+
+This improves:
+
+* User experience
+* System throughput
+* Reliability
+
+---
+
+## 🔥 8️⃣ Benefits of Message Queue
+
+### ✅ 1. Loose Coupling
+
+Services don't directly depend on each other.
+
+### ✅ 2. Asynchronous Processing
+
+No blocking calls.
+
+### ✅ 3. Scalability
+
+Scale consumers independently.
+
+### ✅ 4. Reliability
+
+If consumer crashes, messages remain in queue.
+
+### ✅ 5. Load Buffering
+
+Queue absorbs traffic spikes.
+
+---
+
+## 🔥 9️⃣ When Should You Use Message Queue?
+
+Use MQ when:
+
+* Task takes time
+* Heavy processing required
+* Background jobs
+* Email sending
+* Image processing
+* Payment processing
+* Order handling
+* Logging system
+
+---
+
+## 🔥 1️⃣0️⃣ Interview-Level Explanation
+
+If interviewer asks:
+
+“What is Message Queue?”
+
+Answer structure:
+
+> Message Queue is an asynchronous communication mechanism between services where producers publish messages into a queue and consumers process them independently. It helps in decoupling services, improving scalability, reliability, and performance.
+
+---
+
+## 🔥 1️⃣1️⃣ Real World Message Queue Systems
+
+Common tools:
+
+* RabbitMQ
+* Apache Kafka
+* Amazon SQS
+* Redis Pub/Sub
+* Google Pub/Sub
+
+---
+
+## 🔥 1️⃣2️⃣ Advanced Concept (Important for Interviews)
+
+## Push vs Pull Model
+
+Push:
+Queue pushes messages to consumers.
+
+Pull:
+Consumers pull messages from queue.
+
+---
+
+## At-Least-Once Delivery
+
+Message may be delivered more than once.
+
+## At-Most-Once Delivery
+
+Message may be lost.
+
+## Exactly-Once Delivery
+
+Hardest to achieve.
+
+---
+
+## 🔥 1️⃣3️⃣ What Problems Does Message Queue Solve in Microservices?
+
+| Problem            | Solution by MQ     |
+| ------------------ | ------------------ |
+| Tight coupling     | Decouples services |
+| Blocking calls     | Async processing   |
+| Load spikes        | Queue buffers      |
+| Scaling difficulty | Scale consumers    |
+| Service crashes    | Messages persist   |
+
+---
+
+## 🔥 1️⃣4️⃣ Final Big Picture
+
+Modern scalable architecture:
+
+```
+User
+ ↓
+API Service (Producer)
+ ↓
+Message Queue
+ ↓
+Worker Services (Consumers)
+ ↓
+Database
+```
+
+This design:
+
+* Increases reliability
+* Makes system fault tolerant
+* Improves performance
+* Allows independent scaling
+
+---
+
+## 🏆 Final Summary
+
+Message Queue:
+
+* Enables asynchronous communication
+* Decouples services
+* Improves scalability
+* Increases reliability
+* Handles heavy workloads efficiently
+* Essential in microservices architecture
 
 ---
