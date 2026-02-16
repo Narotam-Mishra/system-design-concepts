@@ -4503,3 +4503,449 @@ When system grows:
 > Logs + Metrics + Automation = Stable, Scalable System
 
 ---
+
+## Database Scaling, Sharding & Justin Bieber Problem (13:07)
+
+## 📌 1️⃣ Why Database Scaling is Needed
+
+When your service becomes:
+
+* Popular 🚀
+* Millions of users
+* Huge data growth
+* Heavy read/write traffic
+
+Then:
+
+* Database becomes overloaded
+* Queries slow down
+* System crashes
+* User experience degrades
+
+So now we must **scale the database**.
+
+There are two major approaches:
+
+1. **Vertical Scaling**
+2. **Horizontal Scaling (Sharding)**
+
+---
+
+## 2️⃣ Vertical Scaling (Scaling Up)
+
+## 🔹 What is Vertical Scaling?
+
+> Increasing power of the same database machine.
+
+You upgrade:
+
+* CPU
+* RAM
+* Disk
+* IOPS
+
+Example:
+From:
+
+* 4GB RAM → 32GB RAM
+* 2 CPU cores → 16 cores
+
+---
+
+## 🔹 Diagram Concept
+
+```
+Before:
+[ DB Server (small) ]
+
+After:
+[ DB Server (bigger CPU + more RAM) ]
+```
+
+---
+
+## 🔹 Advantages
+
+✔ Simple
+✔ No architecture change
+✔ Easy to implement
+
+---
+
+## 🔹 Problems of Vertical Scaling
+
+### ❌ 1. Hardware Limit
+
+You cannot increase forever. There is always a maximum limit.
+
+### ❌ 2. Single Point of Failure
+
+If that one big DB fails → Entire system down.
+
+### ❌ 3. Expensive
+
+High-end servers are very costly.
+
+---
+
+## 🔹 Real Example
+
+Instagram initially had single master DB.
+If it failed → millions of users impacted.
+
+That is dangerous.
+
+---
+
+## 3️⃣ Horizontal Scaling (Sharding)
+
+Now comes the powerful solution 🔥
+
+## 🔹 What is Sharding?
+
+> Splitting data across multiple database servers.
+
+Instead of:
+
+```
+1 Big DB
+```
+
+You create:
+
+```
+Shard 0
+Shard 1
+Shard 2
+Shard 3
+```
+
+Each shard contains **part of the data**.
+
+---
+
+## 4️⃣ How Sharding Works
+
+We use something called:
+
+> **Shard Key**
+
+A column used to decide which shard stores the data.
+
+Example shard key:
+
+* user_id
+* order_id
+* email
+
+---
+
+## 🔹 Simple Sharding Example (Modulo Based)
+
+Suppose we have 4 shards.
+
+Shard selection logic:
+
+```
+shard_number = user_id % 4
+```
+
+---
+
+### 🔹 Code Example (Node.js)
+
+```javascript
+function getShard(userId) {
+    const numberOfShards = 4;
+    return userId % numberOfShards;
+}
+
+function saveUser(userId, userData) {
+    const shard = getShard(userId);
+    console.log(`Saving user ${userId} in Shard ${shard}`);
+}
+
+saveUser(10); // goes to shard 2
+saveUser(11); // goes to shard 3
+```
+
+This distributes data evenly (if user IDs are random).
+
+---
+
+## 5️⃣ Important: Choosing Shard Key
+
+This is **very critical**.
+
+If shard key is bad:
+
+* 60% data may go to shard 0
+* 30% to shard 1
+* Others almost empty
+
+That causes imbalance.
+
+✅ Good shard key → Even distribution
+❌ Bad shard key → Uneven load
+
+---
+
+## 6️⃣ Sharding Architecture
+
+```
+                App Server
+                     |
+              Sharding Logic
+                     |
+     ---------------------------------
+     |        |        |         |
+   Shard0   Shard1   Shard2   Shard3
+```
+
+Each shard:
+
+* Same schema
+* Same table structure
+* Different data
+
+---
+
+## 7️⃣ Problems of Sharding
+
+Now important part 🔥
+
+---
+
+## ❌ 1. Re-Sharding Problem
+
+If a shard becomes full:
+
+* You must change shard logic
+* Redistribute data
+* Migrate data
+* Update application code
+
+Very complex and expensive.
+
+---
+
+## ❌ 2. Join Problem
+
+If data is split across shards:
+
+SQL joins become very difficult.
+
+Example:
+
+```sql
+SELECT * 
+FROM users u
+JOIN orders o
+ON u.id = o.user_id;
+```
+
+If:
+
+* Users in Shard 1
+* Orders in Shard 3
+
+Join becomes hard.
+
+Solution:
+
+* Denormalization
+* Pre-computed tables
+* Aggregation service
+
+---
+
+## 8️⃣ The Justin Bieber Problem (Hotspot Problem)
+
+This is extremely important in interviews 🔥
+
+---
+
+## 🔹 What is Hotspot Problem?
+
+Even if data is evenly distributed:
+
+Some data may become extremely popular.
+
+Example:
+
+* Justin Bieber
+* Kim Kardashian
+* Viral content
+
+Millions of users:
+
+* Read
+* Like
+* Comment
+
+All requests hit same shard.
+
+That shard becomes overloaded.
+
+Other shards remain idle.
+
+---
+
+## 🔹 Real Example (Instagram)
+
+When Justin Bieber posted:
+
+* Millions of likes
+* Massive read/write load
+* Database slowdown
+
+This was called:
+
+> **Hotspot Problem**
+
+---
+
+## 9️⃣ Solutions to Hotspot Problem
+
+### ✅ 1. Caching
+
+Store frequently accessed data in cache (Redis).
+
+```javascript
+const redis = require('redis');
+const client = redis.createClient();
+
+async function getPost(postId) {
+    const cached = await client.get(postId);
+    if (cached) return JSON.parse(cached);
+
+    const dataFromDB = { id: postId, likes: 1000 };
+    await client.set(postId, JSON.stringify(dataFromDB));
+    return dataFromDB;
+}
+```
+
+Now DB load reduces.
+
+---
+
+### ✅ 2. Separate Counter Database
+
+Instagram solution:
+
+* Store like counter separately
+* Maintain counter service
+
+Instead of updating main DB constantly:
+
+Use counter service.
+
+Example:
+
+```javascript
+let likeCounter = {};
+
+function likePost(postId) {
+    if (!likeCounter[postId]) {
+        likeCounter[postId] = 0;
+    }
+    likeCounter[postId]++;
+}
+```
+
+In real world:
+
+* Distributed counter
+* Write-optimized storage
+* Batched updates
+
+---
+
+### ✅ 3. Replication
+
+Use multiple read replicas.
+
+Heavy read load → distribute across replicas.
+
+---
+
+## 1️⃣0️⃣ Final Mature Architecture
+
+After everything learned:
+
+Your production-ready system looks like:
+
+```
+User
+ ↓
+Load Balancer
+ ↓
+Stateless Web Servers
+ ↓
+Cache Layer
+ ↓
+Sharded Database
+ ↓
+Master-Slave Replication
+ ↓
+Message Queue
+ ↓
+Workers
+ ↓
+Logging + Monitoring + Automation
+```
+
+Now your system is:
+
+* Scalable
+* Fault tolerant
+* Highly available
+* Production grade
+
+---
+
+## 1️⃣1️⃣ Final Summary Table
+
+| Concept            | Meaning                  | Problem Solved         |
+| ------------------ | ------------------------ | ---------------------- |
+| Vertical Scaling   | Increase DB power        | Small traffic growth   |
+| Horizontal Scaling | Add more DB servers      | Large traffic growth   |
+| Shard Key          | Key to distribute data   | Even load              |
+| Hotspot Problem    | Popular data overload    | Celebrity issue        |
+| Caching            | Store hot data in memory | Reduce DB load         |
+| Counter Service    | Separate heavy counters  | Prevent write overload |
+
+---
+
+## 1️⃣2️⃣ Interview-Level Key Takeaways
+
+If interviewer asks:
+
+### Why not just vertical scaling?
+
+→ Hardware limit, expensive, single point of failure.
+
+### What is sharding?
+
+→ Splitting database into multiple parts using shard key.
+
+### What is Justin Bieber problem?
+
+→ Hotspot problem where popular data overloads a shard.
+
+### How to fix hotspot?
+
+→ Caching, replication, counter separation, load distribution.
+
+---
+
+You have now completed a **very strong foundation of system design basics** 💪
+
+If you want next level:
+
+* Consistent Hashing
+* Rebalancing shards
+* Distributed transactions
+* Eventual consistency
+* CAP theorem
+* Advanced database partitioning strategies
