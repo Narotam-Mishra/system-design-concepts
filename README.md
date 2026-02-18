@@ -4938,14 +4938,3 @@ If interviewer asks:
 → Caching, replication, counter separation, load distribution.
 
 ---
-
-You have now completed a **very strong foundation of system design basics** 💪
-
-If you want next level:
-
-* Consistent Hashing
-* Rebalancing shards
-* Distributed transactions
-* Eventual consistency
-* CAP theorem
-* Advanced database partitioning strategies
