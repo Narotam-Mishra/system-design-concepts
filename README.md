@@ -4938,3 +4938,353 @@ If interviewer asks:
 → Caching, replication, counter separation, load distribution.
 
 ---
+
+## Normalization vs Denormalization in RDBMS (17:38)
+
+## 📌 1️⃣ What is Normalization?
+
+## 🔹 Definition
+
+**Normalization** means:
+
+> Breaking one large table into multiple smaller related tables to reduce redundancy.
+
+In simple words:
+
+* Big table ➝ Split into smaller tables
+* Remove duplicate data
+* Establish relationships between tables
+
+---
+
+## 🔹 Why Do We Normalize?
+
+Main goal:
+
+* Remove redundant (duplicate) data
+* Improve consistency
+* Avoid update issues
+
+---
+
+## 📌 2️⃣ Example from the Tutorial
+
+## ❌ Before Normalization (Big Table)
+
+### Employee Table
+
+| employee_id | name  | department | building |
+| ----------- | ----- | ---------- | -------- |
+| 1           | Alice | HR         | A        |
+| 2           | Bob   | IT         | B        |
+| 3           | Carol | HR         | A        |
+
+### Problem:
+
+* "HR → Building A" repeated multiple times.
+* Duplicate data (redundancy).
+
+---
+
+## ✅ After Normalization
+
+### Employee Table
+
+| employee_id | name  | department |
+| ----------- | ----- | ---------- |
+| 1           | Alice | HR         |
+| 2           | Bob   | IT         |
+| 3           | Carol | HR         |
+
+### Department Table
+
+| department | building |
+| ---------- | -------- |
+| HR         | A        |
+| IT         | B        |
+
+Now:
+
+* No building repetition
+* Cleaner structure
+* Less redundancy
+
+---
+
+## 📌 3️⃣ How Tables Are Connected?
+
+They are connected using a **common column**.
+
+Here:
+
+```
+department
+```
+
+This acts like a foreign key.
+
+---
+
+## 📌 4️⃣ Query After Normalization (Using JOIN)
+
+Suppose interviewer asks:
+
+> Find building of employee_id = 2
+
+Since building is in another table, we must JOIN.
+
+```sql
+SELECT e.employee_id,
+       e.name,
+       d.building
+FROM employee e
+JOIN department d
+ON e.department = d.department
+WHERE e.employee_id = 2;
+```
+
+---
+
+### 🔹 Why JOIN is Needed?
+
+Because:
+
+* Building is not in employee table
+* It exists in department table
+
+So we combine both tables.
+
+---
+
+## 📌 5️⃣ Advantages of Normalization
+
+### ✅ 1. Removes Redundancy
+
+No repeated building info.
+
+### ✅ 2. Better Data Consistency
+
+If HR moves to Building C:
+
+```sql
+UPDATE department
+SET building = 'C'
+WHERE department = 'HR';
+```
+
+Only 1 update needed.
+
+### ✅ 3. Less Storage Waste
+
+---
+
+## 📌 6️⃣ Disadvantages of Normalization
+
+### ❌ 1. Complex Queries
+
+Need JOINs.
+
+### ❌ 2. Slightly Slower Reads
+
+Because JOIN operations cost time.
+
+---
+
+## 📌 7️⃣ What is Denormalization?
+
+## 🔹 Definition
+
+> Denormalization is the opposite of normalization.
+
+It means:
+
+* Combining multiple tables into one
+* Intentionally adding redundancy
+* Improving read performance
+
+---
+
+## 🔹 Denormalized Table
+
+| employee_id | name  | department | building |
+| ----------- | ----- | ---------- | -------- |
+| 1           | Alice | HR         | A        |
+| 2           | Bob   | IT         | B        |
+| 3           | Carol | HR         | A        |
+
+Everything in one table.
+
+No JOIN needed.
+
+---
+
+## 📌 8️⃣ Query in Denormalization
+
+```sql
+SELECT employee_id, name, building
+FROM employee
+WHERE employee_id = 2;
+```
+
+Much simpler.
+No JOIN required.
+
+---
+
+## 📌 9️⃣ Advantages of Denormalization
+
+### ✅ 1. Faster Reads
+
+No joins.
+
+### ✅ 2. Simple Queries
+
+Easy SQL.
+
+### ✅ 3. Good for Read-Heavy Systems
+
+Examples:
+
+* Reporting systems
+* Analytics dashboards
+* Social media feeds
+
+---
+
+## 📌 🔟 Disadvantages of Denormalization
+
+### ❌ 1. Redundancy
+
+Duplicate building values.
+
+### ❌ 2. Inconsistent Data Risk
+
+If HR moves to Building C:
+
+You must update all HR rows.
+
+If you miss one:
+
+| employee_id | department | building |
+| ----------- | ---------- | -------- |
+| 1           | HR         | C        |
+| 3           | HR         | A ❌      |
+
+Now data is inconsistent.
+
+---
+
+### ❌ 3. Slower Writes
+
+Because:
+
+* Multiple rows need updates.
+
+Example:
+
+```sql
+UPDATE employee
+SET building = 'C'
+WHERE department = 'HR';
+```
+
+Updates multiple rows.
+
+---
+
+## 📌 1️⃣1️⃣ When to Use What?
+
+This is an important interview point.
+
+## 🔹 Use Normalization When:
+
+* System has many writes
+* Data consistency is critical
+* Banking systems
+* Transaction systems
+
+## 🔹 Use Denormalization When:
+
+* System is read-heavy
+* Fast queries needed
+* Analytics/reporting
+* Caching systems
+
+---
+
+# 📌 1️⃣2️⃣ Interview Important Points
+
+If interviewer asks:
+
+### ❓ Which is better?
+
+Correct answer:
+
+> It depends on use case.
+
+Explain both pros and cons.
+
+---
+
+### ❓ Why not always normalize?
+
+Because:
+
+* JOINs slow down read queries.
+
+---
+
+### ❓ Why not always denormalize?
+
+Because:
+
+* Data inconsistency risk.
+* Hard to maintain.
+* Slower updates.
+
+---
+
+## 📌 1️⃣3️⃣ System Design Perspective
+
+In real systems:
+
+* Core transactional DB → Normalized
+* Read replicas / reporting DB → Denormalized
+* Caches → Denormalized
+
+Modern architecture often mixes both.
+
+---
+
+## 📌 1️⃣4️⃣ Quick Comparison Table
+
+| Feature     | Normalization       | Denormalization    |
+| ----------- | ------------------- | ------------------ |
+| Redundancy  | Low                 | High               |
+| Storage     | Efficient           | More               |
+| Read Speed  | Slower (JOIN)       | Faster             |
+| Write Speed | Faster updates      | Slower updates     |
+| Consistency | Strong              | Risky              |
+| Best For    | Write-heavy systems | Read-heavy systems |
+
+---
+
+## 📌 1️⃣5️⃣ Final Core Concept
+
+Normalization → Optimize for **Consistency & Storage**
+Denormalization → Optimize for **Performance & Read Speed**
+
+---
+
+## 🚀 Final Takeaway
+
+* Neither is “good” or “bad”.
+* Both are tools.
+* Choose based on:
+
+  * Read vs Write ratio
+  * Data consistency needs
+  * System scale
+  * Performance requirements
+
+---
